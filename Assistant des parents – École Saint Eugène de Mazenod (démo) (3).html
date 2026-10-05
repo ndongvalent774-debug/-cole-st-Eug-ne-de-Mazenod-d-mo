@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Assistant des parents – École Saint Eugène de Mazenod (démo)</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f8;--card:#fff;--ink:#1a2540;--mute:#5a6785;--brand:#23407f;--brand-ink:#fff;--bot:#fff;--user:#23407f;--line:#d5dcec;--warn:#fff4dc;--warn-ink:#6b4a05;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10162a;--card:#172038;--ink:#e7ecfa;--mute:#98a6c8;--brand:#8fb0ee;--brand-ink:#0c1a38;--bot:#1d2948;--user:#3a5ba8;--line:#27345a;--warn:#3a2f12;--warn-ink:#f1d48a}}
+:root[data-theme="dark"]{--bg:#10162a;--card:#172038;--ink:#e7ecfa;--mute:#98a6c8;--brand:#8fb0ee;--brand-ink:#0c1a38;--bot:#1d2948;--user:#3a5ba8;--line:#27345a;--warn:#3a2f12;--warn-ink:#f1d48a}
+html{height:100%}
+*{box-sizing:border-box}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,sans-serif;display:flex;justify-content:center}
+.app{display:flex;flex-direction:column;width:100%;max-width:560px;height:100%;background:var(--card)}
+header{padding:14px 16px;background:var(--brand);color:var(--brand-ink)}
+header h1{margin:0;font-size:1.05rem;font-weight:800}
+header p{margin:2px 0 0;font-size:.82rem;opacity:.85}
+.note{margin:0;padding:8px 16px;background:var(--warn);color:var(--warn-ink);font-size:.8rem}
+#log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.m{max-width:85%;padding:10px 13px;border-radius:16px;line-height:1.45;font-size:.95rem;white-space:pre-line}
+.bot{align-self:flex-start;background:var(--bot);border:1px solid var(--line);border-bottom-left-radius:4px}
+.me{align-self:flex-end;background:var(--user);color:#fff;border-bottom-right-radius:4px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;border-top:1px solid var(--line);background:var(--card)}
+.chips button{flex:none;border:1px solid var(--brand);background:transparent;color:var(--brand);border-radius:999px;padding:8px 14px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}
+.chips button:focus-visible,#send:focus-visible,#q:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--card)}
+#q{flex:1;min-width:0;border:1px solid var(--line);border-radius:999px;padding:11px 16px;font:inherit;font-size:1rem;background:var(--bg);color:var(--ink)}
+#send{border:0;border-radius:999px;padding:0 20px;background:var(--brand);color:var(--brand-ink);font:inherit;font-weight:800;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+<header><h1>École Saint Eugène de Mazenod</h1><p>Djilasse · Assistant des parents</p></header>
+<p class="note">Démo : les réponses sont préparées à l'avance et les informations entre crochets seront remplacées par celles de l'école.</p>
+<div id="log" aria-live="polite"></div>
+<div class="chips" id="chips"></div>
+<div class="row"><input id="q" type="text" placeholder="Posez votre question…" autocomplete="off" aria-label="Votre question"><button id="send">Envoyer</button></div>
+</div>
+<script>
+var TEL="[téléphone du secrétariat]";
+var KB=[
+{k:["urgence","urgent","accident","blesse","grave","malade"],a:"Pour une situation urgente concernant un élève, appelez immédiatement l'école au "+TEL+"."},
+{k:["inscri","admission","nouvel","nouvelle"],a:"Les inscriptions pour [année scolaire à confirmer] ont lieu [période à confirmer]. Présentez-vous au secrétariat avec les documents demandés. Touchez « Documents à fournir » pour voir la liste."},
+{k:["document","papier","dossier","acte","naissance","bulletin","photo","vaccin"],a:"Pour une inscription, prévoyez en général : acte de naissance, bulletins de l'année précédente, photos d'identité et carnet de vaccination. [Liste exacte à confirmer par l'école.]"},
+{k:["delai","echeance","retard","trimestre","date limite"],a:"Les frais se règlent [par mois ou par trimestre, à confirmer], au plus tard le [date limite à confirmer]. En cas de difficulté, contactez le secrétariat au "+TEL+" avant la date limite."},
+{k:["frais","scolarite","prix","tarif","cout","payer","paiement","combien","mensualite"],a:"Les frais de scolarité dépendent du niveau : [montants et modalités de paiement à confirmer]. Le secrétariat peut vous renseigner au "+TEL+"."},
+{k:["horaire","heure","ouvre","ferme","rentree","cours","debut"],a:"Les cours ont lieu [jours et horaires à confirmer]. Le secrétariat est ouvert [horaires à confirmer]."},
+{k:["vacance","conge","fermeture"],a:"Les vacances scolaires sont : [dates des vacances de l'année à confirmer]. Le calendrier complet sera communiqué aux parents par [WhatsApp ou affichage, à confirmer]."},
+{k:["evenement","fete","kermesse","sortie","ceremonie","spectacle","portes ouvertes","sport","reunion","parent"],a:"Prochains événements : [liste à confirmer : réunions de parents, fêtes, sorties, cérémonies…]. Les parents seront informés par [WhatsApp ou affichage, à confirmer]."},
+{k:["calendrier","examen","composition","devoir","evaluation"],a:"Le calendrier des examens et des évaluations est [à confirmer]. Il sera communiqué aux parents par [WhatsApp ou affichage, à confirmer]."},
+{k:["niveau","classe","primaire","college","lycee","maternelle"],a:"L'école accueille les niveaux suivants : [à confirmer : maternelle, primaire, collège…]."},
+{k:["adresse","situe","ou est","trouver","lieu"],a:"L'école Saint Eugène de Mazenod est située à Djilasse. [Adresse précise et repères à confirmer.]"},
+{k:["bonjour","salut","bonsoir","merci"],a:"Bonjour et bienvenue à l'école Saint Eugène de Mazenod. Comment puis-je vous aider ?"}
+];
+var CH=["Inscriptions","Documents à fournir","Frais de scolarité","Délai de paiement","Vacances","Événements","Horaires","Urgence"];
+var log=document.getElementById("log"),q=document.getElementById("q");
+function norm(s){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
+function add(t,c){var d=document.createElement("div");d.className="m "+c;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight}
+function answer(t){
+var n=norm(t);
+for(var i=0;i<KB.length;i++){for(var j=0;j<KB[i].k.length;j++){if(n.indexOf(KB[i].k[j])>-1)return KB[i].a}}
+return "Je n'ai pas cette information. Je vous invite à contacter le secrétariat au "+TEL+"."}
+function ask(t){t=t.trim();if(!t)return;add(t,"me");q.value="";setTimeout(function(){add(answer(t),"bot")},450)}
+document.getElementById("send").onclick=function(){ask(q.value)};
+q.onkeydown=function(e){if(e.key==="Enter")ask(q.value)};
+var cb=document.getElementById("chips");
+CH.forEach(function(c){var b=document.createElement("button");b.textContent=c;b.onclick=function(){ask(c)};cb.appendChild(b)});
+add("Bonjour, je suis l'assistant de l'école Saint Eugène de Mazenod. Je réponds aux questions pratiques des parents : inscriptions, documents, frais, délais de paiement, vacances, événements.","bot");
+</script>
+</body>
+</html>
